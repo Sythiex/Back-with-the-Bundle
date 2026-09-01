@@ -1,5 +1,8 @@
 {
   "subtitles.item.bundle.insert_fail": "Bundle full",
+  "item.minecraft.bundle.empty": "Empty",
+  "item.minecraft.bundle.empty.description": "Can hold a mixed stack of items",
+  "item.minecraft.bundle.full": "Full",
   "item.minecraft.white_bundle": "White Bundle",
   "item.minecraft.orange_bundle": "Orange Bundle",
   "item.minecraft.magenta_bundle": "Magenta Bundle",

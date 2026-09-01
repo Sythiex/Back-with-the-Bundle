@@ -1,10 +1,15 @@
 package com.sythiex.backwiththebundle.mixin;
 
+import java.util.List;
+import java.util.Optional;
+
 import com.sythiex.backwiththebundle.bundle.BundleContentsOperations;
 import com.sythiex.backwiththebundle.bundle.BundleSelection;
+import com.sythiex.backwiththebundle.bundle.BundleTooltipData;
 import com.sythiex.backwiththebundle.registration.ModSoundEvents;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -13,13 +18,14 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.SlotAccess;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -40,6 +46,35 @@ public abstract class BundleItemMixin extends Item {
 
     protected BundleItemMixin(Properties properties) {
         super(properties);
+    }
+
+    @Inject(method = "getTooltipImage", at = @At("HEAD"), cancellable = true)
+    private void backwiththebundle$getTooltipImage(
+        ItemStack bundle,
+        CallbackInfoReturnable<Optional<TooltipComponent>> callback
+    ) {
+        if (bundle.has(DataComponents.HIDE_TOOLTIP) || bundle.has(DataComponents.HIDE_ADDITIONAL_TOOLTIP)) {
+            callback.setReturnValue(Optional.empty());
+            return;
+        }
+
+        BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        callback.setReturnValue(
+            contents == null
+                ? Optional.empty()
+                : Optional.of(new BundleTooltipData(contents, BundleSelection.getSelectedItem(bundle)))
+        );
+    }
+
+    @Inject(method = "appendHoverText", at = @At("HEAD"), cancellable = true)
+    private void backwiththebundle$removeObsoleteFullnessLine(
+        ItemStack bundle,
+        TooltipContext context,
+        List<Component> tooltipComponents,
+        TooltipFlag tooltipFlag,
+        CallbackInfo callback
+    ) {
+        callback.cancel();
     }
 
     @Inject(method = "overrideStackedOnOther", at = @At("HEAD"), cancellable = true)
@@ -160,11 +195,6 @@ public abstract class BundleItemMixin extends Item {
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity entity) {
         return BACKWITHTHEBUNDLE$USE_DURATION;
-    }
-
-    @Inject(method = "onDestroyed", at = @At("TAIL"))
-    private void backwiththebundle$onDestroyed(ItemEntity itemEntity, CallbackInfo callback) {
-        BundleSelection.clear(itemEntity.getItem());
     }
 
     @Unique

@@ -4,7 +4,12 @@
   "package": "com.sythiex.backwiththebundle.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "BundleContentsMixin",
     "BundleItemMixin"
+  ],
+  "client": [
+    "client.AbstractContainerScreenMixin",
+    "client.CreativeModeInventoryScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

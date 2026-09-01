@@ -8,6 +8,7 @@ import com.sythiex.backwiththebundle.registration.ModCreativeTabs;
 import com.sythiex.backwiththebundle.registration.ModItems;
 import com.sythiex.backwiththebundle.registration.ModRecipeSerializers;
 import com.sythiex.backwiththebundle.registration.ModSoundEvents;
+import com.sythiex.backwiththebundle.network.ModNetworking;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -23,6 +24,7 @@ public class BackwiththeBundle {
         ModItems.register(modEventBus);
         ModRecipeSerializers.register(modEventBus);
         ModSoundEvents.register(modEventBus);
+        modEventBus.addListener(ModNetworking::register);
         modEventBus.addListener(ModCreativeTabs::addBundleVariants);
     }
 }

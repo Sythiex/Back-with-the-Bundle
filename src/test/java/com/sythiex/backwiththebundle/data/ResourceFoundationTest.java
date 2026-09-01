@@ -50,6 +50,15 @@ class ResourceFoundationTest {
         "village_taiga_house"
     );
 
+    private static final List<String> BUNDLE_TOOLTIP_SPRITES = List.of(
+        "slot_background",
+        "slot_highlight_back",
+        "slot_highlight_front",
+        "bundle_progressbar_border",
+        "bundle_progressbar_fill",
+        "bundle_progressbar_full"
+    );
+
     @Test
     void bundleTagContainsTheBaseAndAllSixteenVariants() throws IOException {
         JsonArray values = json("data/minecraft/tags/item/bundles.json").getAsJsonObject().getAsJsonArray("values");
@@ -124,6 +133,27 @@ class ResourceFoundationTest {
         JsonArray lootEntries = extraTable.getAsJsonArray("pools").get(0).getAsJsonObject().getAsJsonArray("entries");
         assertEquals(1, lootEntries.get(0).getAsJsonObject().get("weight").getAsInt());
         assertEquals(2, lootEntries.get(1).getAsJsonObject().get("weight").getAsInt());
+    }
+
+    @Test
+    void modernBundleTooltipHasItsVanillaSpritesAndTranslations() throws IOException {
+        for (String sprite : BUNDLE_TOOLTIP_SPRITES) {
+            String basePath = "assets/minecraft/textures/gui/sprites/container/bundle/" + sprite + ".png";
+            assertResource(basePath);
+            JsonObject metadata = json(basePath + ".mcmeta").getAsJsonObject();
+            assertEquals("nine_slice", metadata.getAsJsonObject("gui")
+                .getAsJsonObject("scaling")
+                .get("type")
+                .getAsString());
+        }
+
+        JsonObject language = json("assets/minecraft/lang/en_us.json").getAsJsonObject();
+        assertEquals("Empty", language.get("item.minecraft.bundle.empty").getAsString());
+        assertEquals(
+            "Can hold a mixed stack of items",
+            language.get("item.minecraft.bundle.empty.description").getAsString()
+        );
+        assertEquals("Full", language.get("item.minecraft.bundle.full").getAsString());
     }
 
     private static JsonElement json(String path) throws IOException {
