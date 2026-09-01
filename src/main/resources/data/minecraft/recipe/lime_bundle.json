@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_transmute",
+  "category": "equipment",
+  "group": "bundle_dye",
+  "input": "#minecraft:bundles",
+  "material": "minecraft:lime_dye",
+  "result": {
+    "id": "minecraft:lime_bundle",
+    "count": 1
+  }
+}

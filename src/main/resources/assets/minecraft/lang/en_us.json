@@ -1,0 +1,19 @@
+{
+  "subtitles.item.bundle.insert_fail": "Bundle full",
+  "item.minecraft.white_bundle": "White Bundle",
+  "item.minecraft.orange_bundle": "Orange Bundle",
+  "item.minecraft.magenta_bundle": "Magenta Bundle",
+  "item.minecraft.light_blue_bundle": "Light Blue Bundle",
+  "item.minecraft.yellow_bundle": "Yellow Bundle",
+  "item.minecraft.lime_bundle": "Lime Bundle",
+  "item.minecraft.pink_bundle": "Pink Bundle",
+  "item.minecraft.gray_bundle": "Gray Bundle",
+  "item.minecraft.light_gray_bundle": "Light Gray Bundle",
+  "item.minecraft.cyan_bundle": "Cyan Bundle",
+  "item.minecraft.purple_bundle": "Purple Bundle",
+  "item.minecraft.blue_bundle": "Blue Bundle",
+  "item.minecraft.brown_bundle": "Brown Bundle",
+  "item.minecraft.green_bundle": "Green Bundle",
+  "item.minecraft.red_bundle": "Red Bundle",
+  "item.minecraft.black_bundle": "Black Bundle"
+}

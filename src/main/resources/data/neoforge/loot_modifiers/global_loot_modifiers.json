@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "entries": [
+    "backwiththebundle:village_cartographer_bundle",
+    "backwiththebundle:village_tannery_bundle",
+    "backwiththebundle:village_weaponsmith_bundle",
+    "backwiththebundle:village_plains_house_bundle",
+    "backwiththebundle:village_desert_house_bundle",
+    "backwiththebundle:village_snowy_house_bundle",
+    "backwiththebundle:village_savanna_house_bundle",
+    "backwiththebundle:village_taiga_house_bundle"
+  ]
+}
