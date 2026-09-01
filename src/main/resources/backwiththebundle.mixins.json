@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.sythiex.backwiththebundle.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BundleItemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
