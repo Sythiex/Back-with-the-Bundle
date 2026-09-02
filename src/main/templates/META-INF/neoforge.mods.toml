@@ -34,6 +34,8 @@ description='''
 A faithful backport of all the modern bundle features to 1.21.1
 '''
 
+logoFile="logo.png"
+
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
 [[mixins]]
 config="${mod_id}.mixins.json"
