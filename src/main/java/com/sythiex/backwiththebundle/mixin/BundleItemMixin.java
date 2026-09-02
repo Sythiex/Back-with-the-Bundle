@@ -201,6 +201,7 @@ public abstract class BundleItemMixin extends Item {
     private void backwiththebundle$dropContent(Level level, Player player, ItemStack bundle) {
         ItemStack removedStack = BundleContentsOperations.removeSelected(bundle);
         if (!removedStack.isEmpty()) {
+            backwiththebundle$playRemoveOneSound(player);
             player.drop(removedStack, true);
             backwiththebundle$playDropContentsSound(level, player);
             player.awardStat(Stats.ITEM_USED.get((BundleItem)(Object)this));
