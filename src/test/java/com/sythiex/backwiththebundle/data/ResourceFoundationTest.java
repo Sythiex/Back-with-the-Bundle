@@ -132,8 +132,8 @@ class ResourceFoundationTest {
     void baseBundleRecipeUsesStringOverLeather() throws IOException {
         JsonObject recipe = json("data/minecraft/recipe/bundle.json").getAsJsonObject();
         assertEquals(List.of("-", "#"), recipe.getAsJsonArray("pattern").asList().stream().map(JsonElement::getAsString).toList());
-        assertEquals("minecraft:string", recipe.getAsJsonObject("key").get("-").getAsString());
-        assertEquals("minecraft:leather", recipe.getAsJsonObject("key").get("#").getAsString());
+        assertEquals("minecraft:string", recipe.getAsJsonObject("key").getAsJsonObject("-").get("item").getAsString());
+        assertEquals("minecraft:leather", recipe.getAsJsonObject("key").getAsJsonObject("#").get("item").getAsString());
     }
 
     @Test
