@@ -177,7 +177,7 @@ public abstract class BundleItemMixin extends Item {
     ) {
         ItemStack bundle = player.getItemInHand(usedHand);
         player.startUsingItem(usedHand);
-        callback.setReturnValue(InteractionResultHolder.consume(bundle));
+        callback.setReturnValue(InteractionResultHolder.sidedSuccess(bundle, level.isClientSide()));
     }
 
     @Override

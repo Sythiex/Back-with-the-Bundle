@@ -16,6 +16,9 @@ import com.sythiex.backwiththebundle.recipe.TransmuteRecipe;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BundleItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.UseAnim;
 
 class RegistrationFoundationTest {
     @Test
@@ -71,6 +74,14 @@ class RegistrationFoundationTest {
         assertEquals(
             ResourceLocation.withDefaultNamespace("item.bundle.insert_fail"),
             ModSoundEvents.BUNDLE_INSERT_FAIL.get().getLocation()
+        );
+    }
+
+    @Test
+    void baseAndDyedBundlesKeepTheInheritedUseAnimation() {
+        assertEquals(UseAnim.NONE, new ItemStack(Items.BUNDLE).getUseAnimation());
+        ModItems.DYED_BUNDLES_IN_CREATIVE_ORDER.forEach(bundle ->
+            assertEquals(UseAnim.NONE, bundle.get().getDefaultInstance().getUseAnimation())
         );
     }
 }

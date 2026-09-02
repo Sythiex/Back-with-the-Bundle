@@ -10,7 +10,8 @@
   "client": [
     "client.AbstractContainerScreenMixin",
     "client.CreativeModeInventoryScreenMixin",
-    "client.GuiGraphicsMixin"
+    "client.GuiGraphicsMixin",
+    "client.ItemInHandRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
