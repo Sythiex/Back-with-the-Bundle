@@ -31,7 +31,7 @@ authors="Sythiex"
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Backports the bundle
+A faithful backport of all the modern bundle features to 1.21.1
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.
