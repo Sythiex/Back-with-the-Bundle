@@ -115,13 +115,15 @@ class BundleSelectionTest {
     }
 
     @Test
-    void invalidOrHiddenSelectionsAreRejected() {
+    void hiddenSelectionsAreAcceptedAndInvalidSelectionsAreRejected() {
         ItemStack bundle = bundleWithItemTypes(13);
         assertEquals(8, BundleSelection.getNumberOfItemsToShow(bundle));
 
         BundleSelection.setSelectedItem(bundle, 7);
         assertEquals(7, BundleSelection.getSelectedItem(bundle));
-        BundleSelection.setSelectedItem(bundle, 8);
+        BundleSelection.setSelectedItem(bundle, 12);
+        assertEquals(12, BundleSelection.getSelectedItem(bundle));
+        BundleSelection.setSelectedItem(bundle, 13);
         assertEquals(BundleSelection.NO_SELECTED_ITEM, BundleSelection.getSelectedItem(bundle));
         BundleSelection.setSelectedItem(bundle, -2);
         assertEquals(BundleSelection.NO_SELECTED_ITEM, BundleSelection.getSelectedItem(bundle));

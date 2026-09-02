@@ -69,17 +69,19 @@ class BundleSelectionRequestTest {
     }
 
     @Test
-    void malformedAndHiddenIndicesAreRejected() {
+    void hiddenIndicesAreAcceptedAndOutOfBoundsIndicesAreRejected() {
         ItemStack bundle = bundleWithItemTypes(13);
         TestMenu menu = new TestMenu(7, bundle);
         assertEquals(8, BundleSelection.getNumberOfItemsToShow(bundle));
 
         assertFalse(BundleSelectionRequest.apply(menu, 7, 0, -2));
-        assertFalse(BundleSelectionRequest.apply(menu, 7, 0, 8));
         assertEquals(BundleSelection.NO_SELECTED_ITEM, BundleSelection.getSelectedItem(bundle));
 
-        assertTrue(BundleSelectionRequest.apply(menu, 7, 0, 7));
-        assertEquals(7, BundleSelection.getSelectedItem(bundle));
+        assertTrue(BundleSelectionRequest.apply(menu, 7, 0, 12));
+        assertEquals(12, BundleSelection.getSelectedItem(bundle));
+
+        assertFalse(BundleSelectionRequest.apply(menu, 7, 0, 13));
+        assertEquals(12, BundleSelection.getSelectedItem(bundle));
     }
 
     private static ItemStack bundleWithItemTypes(int count) {

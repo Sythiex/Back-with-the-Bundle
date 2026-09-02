@@ -4,8 +4,8 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.sythiex.backwiththebundle.bundle.BundleSelection;
 import com.sythiex.backwiththebundle.bundle.BundleTooltipData;
+import com.sythiex.backwiththebundle.client.BundleTooltipLayout;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -44,11 +44,7 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
         "container/bundle/slot_background"
     );
 
-    private static final int COLUMNS = 4;
-    private static final int SLOT_SIZE = 24;
-    private static final int GRID_WIDTH = COLUMNS * SLOT_SIZE;
     private static final int PROGRESSBAR_HEIGHT = 13;
-    private static final int PROGRESSBAR_FILL_MAX = 94;
     private static final int PROGRESSBAR_MARGIN_Y = 4;
     private static final int TOOLTIP_BOTTOM_MARGIN = 4;
 
@@ -58,22 +54,51 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
 
     private final BundleContents contents;
     private final int selectedItem;
+    private BundleTooltipLayout layout;
 
     public ClientBundleTooltip(BundleTooltipData tooltip) {
         this.contents = tooltip.contents();
         this.selectedItem = tooltip.selectedItem();
+        this.layout = BundleTooltipLayout.forCurrentConfig(this.contents);
+    }
+
+    void fitToTooltipBounds(
+        int tooltipWidth,
+        int otherComponentsHeight,
+        int vanillaHeightAdjustment,
+        int scaledScreenWidth,
+        int scaledScreenHeight
+    ) {
+        int preferredColumns = BundleTooltipLayout.columnsForTooltipWidth(tooltipWidth, scaledScreenWidth);
+        int maximumRows = BundleTooltipLayout.maximumRowsForTooltip(
+            scaledScreenHeight,
+            otherComponentsHeight,
+            this.getNonGridHeight(),
+            vanillaHeightAdjustment
+        );
+        this.layout = BundleTooltipLayout.create(
+            this.contents,
+            true,
+            maximumRows,
+            preferredColumns,
+            BundleTooltipLayout.maximumColumnsForScreen(scaledScreenWidth)
+        );
+    }
+
+    int getNonGridHeight() {
+        return this.getHeight() - this.layout.gridHeight();
     }
 
     @Override
     public int getHeight() {
         return this.contents.isEmpty()
-            ? getEmptyBundleBackgroundHeight(Minecraft.getInstance().font)
+            ? this.getEmptyBundleBackgroundHeight(Minecraft.getInstance().font)
             : this.backgroundHeight();
     }
 
     @Override
     public int getWidth(Font font) {
-        return GRID_WIDTH;
+        return this.layout.gridWidth();
     }
 
     @Override
@@ -85,8 +110,8 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
         }
     }
 
-    private static int getEmptyBundleBackgroundHeight(Font font) {
-        return getEmptyBundleDescriptionTextHeight(font)
+    private int getEmptyBundleBackgroundHeight(Font font) {
+        return this.getEmptyBundleDescriptionTextHeight(font)
             + PROGRESSBAR_MARGIN_Y
             + PROGRESSBAR_HEIGHT
             + TOOLTIP_BOTTOM_MARGIN;
@@ -97,34 +122,30 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
     }
 
     private int itemGridHeight() {
-        return this.gridSizeY() * SLOT_SIZE;
-    }
-
-    private int gridSizeY() {
-        return (this.slotCount() + COLUMNS - 1) / COLUMNS;
-    }
-
-    private int slotCount() {
-        return Math.min(12, this.contents.size());
+        return this.layout.gridHeight();
     }
 
     private void renderEmptyBundleTooltip(Font font, int x, int y, GuiGraphics guiGraphics) {
-        drawEmptyBundleDescriptionText(x, y, font, guiGraphics);
-        this.drawProgressbar(x, y + getEmptyBundleDescriptionTextHeight(font) + PROGRESSBAR_MARGIN_Y, font, guiGraphics);
+        this.drawEmptyBundleDescriptionText(x, y, font, guiGraphics);
+        this.drawProgressbar(
+            x,
+            y + this.getEmptyBundleDescriptionTextHeight(font) + PROGRESSBAR_MARGIN_Y,
+            font,
+            guiGraphics
+        );
     }
 
     private void renderBundleWithItemsTooltip(Font font, int x, int y, GuiGraphics guiGraphics) {
-        boolean hasHiddenItems = this.contents.size() > 12;
-        List<ItemStack> shownItems = this.getShownItems(BundleSelection.getNumberOfItemsToShow(this.contents));
-        int right = x + GRID_WIDTH;
+        List<ItemStack> shownItems = this.getShownItems(this.layout.itemsToShow());
+        int right = x + this.layout.gridWidth();
         int bottom = y + this.itemGridHeight();
         int slotIndex = 1;
 
-        for (int row = 1; row <= this.gridSizeY(); row++) {
-            for (int column = 1; column <= COLUMNS; column++) {
-                int slotX = right - column * SLOT_SIZE;
-                int slotY = bottom - row * SLOT_SIZE;
-                if (shouldRenderSurplusText(hasHiddenItems, column, row)) {
+        for (int row = 1; row <= this.layout.rows(); row++) {
+            for (int column = 1; column <= this.layout.columns(); column++) {
+                int slotX = right - column * BundleTooltipLayout.SLOT_SIZE;
+                int slotY = bottom - row * BundleTooltipLayout.SLOT_SIZE;
+                if (shouldRenderSurplusText(this.layout.hasHiddenItems(), column, row)) {
                     renderCount(slotX, slotY, this.getAmountOfHiddenItems(shownItems), font, guiGraphics);
                 } else if (shownItems.size() >= slotIndex) {
                     this.renderSlot(slotIndex, slotX, slotY, shownItems, font, guiGraphics);
@@ -161,16 +182,34 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
         int contentsIndex = shownItems.size() - slotIndex;
         boolean selected = contentsIndex == this.selectedItem;
         ItemStack stack = shownItems.get(contentsIndex);
-        guiGraphics.blitSprite(selected ? SLOT_HIGHLIGHT_BACK_SPRITE : SLOT_BACKGROUND_SPRITE, x, y, SLOT_SIZE, SLOT_SIZE);
+        guiGraphics.blitSprite(
+            selected ? SLOT_HIGHLIGHT_BACK_SPRITE : SLOT_BACKGROUND_SPRITE,
+            x,
+            y,
+            BundleTooltipLayout.SLOT_SIZE,
+            BundleTooltipLayout.SLOT_SIZE
+        );
         guiGraphics.renderItem(stack, x + 4, y + 4, slotIndex);
         guiGraphics.renderItemDecorations(font, stack, x + 4, y + 4);
         if (selected) {
-            guiGraphics.blitSprite(SLOT_HIGHLIGHT_FRONT_SPRITE, x, y, SLOT_SIZE, SLOT_SIZE);
+            guiGraphics.blitSprite(
+                SLOT_HIGHLIGHT_FRONT_SPRITE,
+                x,
+                y,
+                BundleTooltipLayout.SLOT_SIZE,
+                BundleTooltipLayout.SLOT_SIZE
+            );
         }
     }
 
     private static void renderCount(int x, int y, int count, Font font, GuiGraphics guiGraphics) {
-        guiGraphics.drawCenteredString(font, "+" + count, x + SLOT_SIZE / 2, y + 10, 0xFFFFFF);
+        guiGraphics.drawCenteredString(
+            font,
+            "+" + count,
+            x + BundleTooltipLayout.SLOT_SIZE / 2,
+            y + 10,
+            0xFFFFFF
+        );
     }
 
     private void drawSelectedItemTooltip(Font font, GuiGraphics guiGraphics, int x, int y) {
@@ -183,30 +222,31 @@ public final class ClientBundleTooltip implements ClientTooltipComponent {
                 name.withStyle(ChatFormatting.ITALIC);
             }
             int nameWidth = font.width(name.getVisualOrderText());
-            int center = x + GRID_WIDTH / 2 - SLOT_SIZE / 2;
+            int center = x + this.layout.gridWidth() / 2 - BundleTooltipLayout.SLOT_SIZE / 2;
             guiGraphics.renderTooltip(font, name, center - nameWidth / 2, y - 15);
         }
     }
 
     private void drawProgressbar(int x, int y, Font font, GuiGraphics guiGraphics) {
         guiGraphics.blitSprite(this.getProgressBarTexture(), x + 1, y, this.getProgressBarFill(), PROGRESSBAR_HEIGHT);
-        guiGraphics.blitSprite(PROGRESSBAR_BORDER_SPRITE, x, y, GRID_WIDTH, PROGRESSBAR_HEIGHT);
+        guiGraphics.blitSprite(PROGRESSBAR_BORDER_SPRITE, x, y, this.layout.gridWidth(), PROGRESSBAR_HEIGHT);
         Component text = this.getProgressBarFillText();
         if (text != null) {
-            guiGraphics.drawCenteredString(font, text, x + GRID_WIDTH / 2, y + 3, 0xFFFFFF);
+            guiGraphics.drawCenteredString(font, text, x + this.layout.gridWidth() / 2, y + 3, 0xFFFFFF);
         }
     }
 
-    private static void drawEmptyBundleDescriptionText(int x, int y, Font font, GuiGraphics guiGraphics) {
-        guiGraphics.drawWordWrap(font, BUNDLE_EMPTY_DESCRIPTION, x, y, GRID_WIDTH, 0xAAAAAA);
+    private void drawEmptyBundleDescriptionText(int x, int y, Font font, GuiGraphics guiGraphics) {
+        guiGraphics.drawWordWrap(font, BUNDLE_EMPTY_DESCRIPTION, x, y, this.layout.gridWidth(), 0xAAAAAA);
     }
 
-    private static int getEmptyBundleDescriptionTextHeight(Font font) {
-        return font.split(BUNDLE_EMPTY_DESCRIPTION, GRID_WIDTH).size() * 9;
+    private int getEmptyBundleDescriptionTextHeight(Font font) {
+        return font.split(BUNDLE_EMPTY_DESCRIPTION, this.layout.gridWidth()).size() * 9;
     }
 
     private int getProgressBarFill() {
-        return Mth.clamp(Mth.mulAndTruncate(this.contents.weight(), PROGRESSBAR_FILL_MAX), 0, PROGRESSBAR_FILL_MAX);
+        int maximumFill = this.layout.gridWidth() - 2;
+        return Mth.clamp(Mth.mulAndTruncate(this.contents.weight(), maximumFill), 0, maximumFill);
     }
 
     private ResourceLocation getProgressBarTexture() {

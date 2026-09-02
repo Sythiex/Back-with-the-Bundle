@@ -24,7 +24,7 @@ public final class BundleSelectionRequest {
 
         if (selectedItemIndex == BundleSelection.NO_SELECTED_ITEM) {
             BundleSelection.clear(bundle);
-        } else if (selectedItemIndex >= 0 && selectedItemIndex < BundleSelection.getNumberOfItemsToShow(bundle)) {
+        } else if (BundleSelection.isSelectable(bundle, selectedItemIndex)) {
             BundleSelection.setSelectedItem(bundle, selectedItemIndex);
         } else {
             return false;

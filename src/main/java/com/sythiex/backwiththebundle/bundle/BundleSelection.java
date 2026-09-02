@@ -64,8 +64,13 @@ public final class BundleSelection {
         replaceSelection(bundle, contents, NO_SELECTED_ITEM);
     }
 
+    static boolean isSelectable(ItemStack bundle, int selectedItem) {
+        BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        return contents != null && isSelectable(contents, selectedItem);
+    }
+
     private static boolean isSelectable(BundleContents contents, int selectedItem) {
-        return selectedItem >= 0 && selectedItem < getNumberOfItemsToShow(contents);
+        return selectedItem >= 0 && selectedItem < contents.size();
     }
 
     private static void replaceSelection(ItemStack bundle, BundleContents contents, int selectedItem) {

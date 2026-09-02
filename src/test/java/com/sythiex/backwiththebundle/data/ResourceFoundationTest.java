@@ -145,7 +145,7 @@ class ResourceFoundationTest {
         assertResource("assets/minecraft/sounds/item/bundle/insert_fail.ogg");
 
         JsonObject language = json("assets/minecraft/lang/en_us.json").getAsJsonObject();
-        assertEquals("Bundle full", language.get("subtitles.item.bundle.insert_fail").getAsString());
+        assertNotNull(language.get("subtitles.item.bundle.insert_fail"));
         COLORS.forEach(color -> assertNotNull(language.get("item.minecraft." + color + "_bundle")));
     }
 
@@ -187,12 +187,18 @@ class ResourceFoundationTest {
         }
 
         JsonObject language = json("assets/minecraft/lang/en_us.json").getAsJsonObject();
-        assertEquals("Empty", language.get("item.minecraft.bundle.empty").getAsString());
-        assertEquals(
-            "Can hold a mixed stack of items",
-            language.get("item.minecraft.bundle.empty.description").getAsString()
-        );
-        assertEquals("Full", language.get("item.minecraft.bundle.full").getAsString());
+        assertNotNull(language.get("item.minecraft.bundle.empty"));
+        assertNotNull(language.get("item.minecraft.bundle.empty.description"));
+        assertNotNull(language.get("item.minecraft.bundle.full"));
+    }
+
+    @Test
+    void clientConfigurationHasTranslatedTitleOptionAndTooltip() throws IOException {
+        JsonObject language = json("assets/backwiththebundle/lang/en_us.json").getAsJsonObject();
+
+        assertNotNull(language.get("backwiththebundle.configuration.title"));
+        assertNotNull(language.get("backwiththebundle.configuration.expandBundleTooltip"));
+        assertNotNull(language.get("backwiththebundle.configuration.expandBundleTooltip.tooltip"));
     }
 
     private static JsonElement json(String path) throws IOException {

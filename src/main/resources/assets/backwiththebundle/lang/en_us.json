@@ -1,0 +1,5 @@
+{
+  "backwiththebundle.configuration.title": "%s Configuration",
+  "backwiththebundle.configuration.expandBundleTooltip": "Expand Bundle Tooltips",
+  "backwiththebundle.configuration.expandBundleTooltip.tooltip": "Show every item stored in a bundle and allow scrolling through all of them"
+}
