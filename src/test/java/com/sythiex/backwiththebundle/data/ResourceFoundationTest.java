@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -59,6 +60,11 @@ class ResourceFoundationTest {
         "bundle_progressbar_full"
     );
 
+    private static final List<String> BUNDLES = Stream.concat(
+        Stream.of("bundle"),
+        COLORS.stream().map(color -> color + "_bundle")
+    ).toList();
+
     @Test
     void bundleTagContainsTheBaseAndAllSixteenVariants() throws IOException {
         JsonArray values = json("data/minecraft/tags/item/bundles.json").getAsJsonObject().getAsJsonArray("values");
@@ -87,6 +93,39 @@ class ResourceFoundationTest {
 
             assertResource("data/minecraft/advancement/recipes/tools/" + item + ".json");
         }
+    }
+
+    @Test
+    void everyBundleHasClosedAndLayeredOpenModelsAndTextures() throws IOException {
+        for (String item : BUNDLES) {
+            JsonObject closedModel = json("assets/minecraft/models/item/" + item + ".json").getAsJsonObject();
+            assertEquals("minecraft:item/generated", closedModel.get("parent").getAsString());
+            assertEquals(
+                "minecraft:item/" + item,
+                closedModel.getAsJsonObject("textures").get("layer0").getAsString()
+            );
+            assertResource("assets/minecraft/textures/item/" + item + ".png");
+
+            for (String part : List.of("back", "front")) {
+                String openItem = item + "_open_" + part;
+                JsonObject openModel = json("assets/minecraft/models/item/" + openItem + ".json").getAsJsonObject();
+                assertEquals("minecraft:item/template_bundle_open_" + part, openModel.get("parent").getAsString());
+                assertEquals(
+                    "minecraft:item/" + openItem,
+                    openModel.getAsJsonObject("textures").get("layer0").getAsString()
+                );
+                assertResource("assets/minecraft/textures/item/" + openItem + ".png");
+            }
+        }
+
+        JsonObject baseModel = json("assets/minecraft/models/item/bundle.json").getAsJsonObject();
+        assertFalse(baseModel.has("overrides"));
+    }
+
+    @Test
+    void openBundleTemplatesSeparateTheBackAndFrontLayersInGuiSpace() throws IOException {
+        assertBundleTemplateTranslation("back", -16);
+        assertBundleTemplateTranslation("front", 16);
     }
 
     @Test
@@ -161,6 +200,22 @@ class ResourceFoundationTest {
              InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
             return JsonParser.parseReader(reader);
         }
+    }
+
+    private static void assertBundleTemplateTranslation(String part, int z) throws IOException {
+        JsonObject template = json("assets/minecraft/models/item/template_bundle_open_" + part + ".json")
+            .getAsJsonObject();
+        assertEquals("minecraft:item/generated", template.get("parent").getAsString());
+        assertEquals(
+            List.of(0, 0, z),
+            template.getAsJsonObject("display")
+                .getAsJsonObject("gui")
+                .getAsJsonArray("translation")
+                .asList()
+                .stream()
+                .map(JsonElement::getAsInt)
+                .toList()
+        );
     }
 
     private static void assertResource(String path) throws IOException {
