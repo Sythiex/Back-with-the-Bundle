@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
@@ -28,6 +29,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.level.Level;
+import org.apache.commons.lang3.math.Fraction;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -37,6 +39,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BundleItem.class)
 public abstract class BundleItemMixin extends Item {
+    @Unique
+    private static final int BACKWITHTHEBUNDLE$FULL_BAR_COLOR = Mth.color(1.0F, 0.33F, 0.33F);
+    @Unique
+    private static final int BACKWITHTHEBUNDLE$BAR_COLOR = Mth.color(0.44F, 0.53F, 1.0F);
     @Unique
     private static final int BACKWITHTHEBUNDLE$TICKS_AFTER_FIRST_THROW = 10;
     @Unique
@@ -75,6 +81,19 @@ public abstract class BundleItemMixin extends Item {
         CallbackInfo callback
     ) {
         callback.cancel();
+    }
+
+    @Inject(method = "getBarColor", at = @At("HEAD"), cancellable = true)
+    private void backwiththebundle$getBarColor(
+        ItemStack bundle,
+        CallbackInfoReturnable<Integer> callback
+    ) {
+        BundleContents contents = bundle.getOrDefault(DataComponents.BUNDLE_CONTENTS, BundleContents.EMPTY);
+        callback.setReturnValue(
+            contents.weight().compareTo(Fraction.ONE) >= 0
+                ? BACKWITHTHEBUNDLE$FULL_BAR_COLOR
+                : BACKWITHTHEBUNDLE$BAR_COLOR
+        );
     }
 
     @Inject(method = "overrideStackedOnOther", at = @At("HEAD"), cancellable = true)
