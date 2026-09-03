@@ -8,6 +8,7 @@ import com.sythiex.backwiththebundle.bundle.BundleInteractionHooks;
 import com.sythiex.backwiththebundle.bundle.BundleInteractionPolicy;
 import com.sythiex.backwiththebundle.bundle.BundleSelection;
 import com.sythiex.backwiththebundle.bundle.BundleSelectionScroll;
+import com.sythiex.backwiththebundle.config.ClientConfig;
 import com.sythiex.backwiththebundle.network.SelectBundleItemPayload;
 import com.sythiex.backwiththebundle.network.TransferBundleToSlotPayload;
 
@@ -21,6 +22,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
@@ -36,6 +38,25 @@ public final class BundleMouseActions {
     private static ServerSlotTarget selectedServerTarget = ServerSlotTarget.NONE;
 
     private BundleMouseActions() {
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onMouseDragged(ScreenEvent.MouseDragged.Pre event) {
+        if (!ClientConfig.BUNDLE_DRAG_ENABLED.get()
+            || !(event.getScreen() instanceof AbstractContainerScreen<?> screen)
+            || !(screen instanceof BundleDragScreenAccess dragScreen)) {
+            return;
+        }
+
+        if (dragScreen.backwiththebundle$handleBundleDrag(
+            event.getMouseX(),
+            event.getMouseY(),
+            event.getMouseButton(),
+            event.getDragX(),
+            event.getDragY()
+        )) {
+            event.setCanceled(true);
+        }
     }
 
     @SubscribeEvent
@@ -97,6 +118,20 @@ public final class BundleMouseActions {
         if (player == null || slot == null || !BundleInteractionPolicy.canDragIntoBundle(
             screen.getMenu().getCarried(),
             slot.getItem(),
+            slot.mayPickup(player)
+        )) {
+            return false;
+        }
+
+        return !(screen instanceof CreativeModeInventoryScreen)
+            || CreativeInventorySlotResolver.findInventoryMenuSlot(player.inventoryMenu, slot)
+                != CreativeInventorySlotResolver.NO_SERVER_SLOT;
+    }
+
+    public static boolean canStartDragIntoBundle(AbstractContainerScreen<?> screen, @Nullable Slot slot) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || slot == null || !BundleInteractionPolicy.canStartDragIntoBundle(
+            screen.getMenu().getCarried(),
             slot.mayPickup(player)
         )) {
             return false;

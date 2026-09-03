@@ -50,6 +50,34 @@ class BundleInteractionPolicyTest {
     }
 
     @Test
+    void bundleDragOwnershipRequiresTheEnabledOptionAndOneHeldBundle() {
+        ItemStack bundle = new ItemStack(Items.BUNDLE);
+
+        assertTrue(BundleInteractionPolicy.shouldOwnBundleDrag(bundle, 0, true, false));
+        assertTrue(BundleInteractionPolicy.shouldOwnBundleDrag(bundle, 1, true, false));
+
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(bundle, 0, false, false));
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(bundle, 0, true, true));
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(bundle, 2, true, false));
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(bundle.copyWithCount(2), 0, true, false));
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(new ItemStack(Items.CHEST), 0, true, false));
+        assertFalse(BundleInteractionPolicy.shouldOwnBundleDrag(ItemStack.EMPTY, 0, true, false));
+    }
+
+    @Test
+    void bundleDragCanOnlyBeginFromAnEligibleSlot() {
+        ItemStack bundle = new ItemStack(Items.BUNDLE);
+
+        assertTrue(BundleInteractionPolicy.shouldBeginBundleDrag(bundle, 0, true, false, true));
+        assertTrue(BundleInteractionPolicy.shouldBeginBundleDrag(bundle, 1, true, false, true));
+
+        assertFalse(BundleInteractionPolicy.shouldBeginBundleDrag(bundle, 0, true, false, false));
+        assertFalse(BundleInteractionPolicy.shouldBeginBundleDrag(bundle, 0, false, false, true));
+        assertFalse(BundleInteractionPolicy.shouldBeginBundleDrag(bundle, 0, true, true, true));
+        assertFalse(BundleInteractionPolicy.shouldBeginBundleDrag(new ItemStack(Items.CHEST), 0, true, false, true));
+    }
+
+    @Test
     void dragInsertionRequiresOneBundleAndAnEligibleSlottedItem() {
         ItemStack bundle = new ItemStack(Items.BUNDLE);
         ItemStack apple = new ItemStack(Items.APPLE);
@@ -62,6 +90,19 @@ class BundleInteractionPolicyTest {
         assertFalse(BundleInteractionPolicy.canDragIntoBundle(bundle, ItemStack.EMPTY, true));
         assertFalse(BundleInteractionPolicy.canDragIntoBundle(bundle, new ItemStack(Items.SHULKER_BOX), true));
         assertFalse(BundleInteractionPolicy.canDragIntoBundle(bundle, apple, false));
+    }
+
+    @Test
+    void leftDragCanStartBeforeItReachesATransferableItem() {
+        ItemStack bundle = new ItemStack(Items.BUNDLE);
+
+        assertTrue(BundleInteractionPolicy.canStartDragIntoBundle(bundle, true));
+        assertFalse(BundleInteractionPolicy.canDragIntoBundle(bundle, ItemStack.EMPTY, true));
+        assertFalse(BundleInteractionPolicy.canDragIntoBundle(bundle, new ItemStack(Items.SHULKER_BOX), true));
+
+        assertFalse(BundleInteractionPolicy.canStartDragIntoBundle(bundle, false));
+        assertFalse(BundleInteractionPolicy.canStartDragIntoBundle(bundle.copyWithCount(2), true));
+        assertFalse(BundleInteractionPolicy.canStartDragIntoBundle(new ItemStack(Items.CHEST), true));
     }
 
     @Test

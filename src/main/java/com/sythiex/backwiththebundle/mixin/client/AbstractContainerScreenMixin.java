@@ -6,6 +6,7 @@ import java.util.Set;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.sythiex.backwiththebundle.bundle.BundleInteractionPolicy;
+import com.sythiex.backwiththebundle.client.BundleDragScreenAccess;
 import com.sythiex.backwiththebundle.client.BundleMouseActions;
 import com.sythiex.backwiththebundle.config.ClientConfig;
 
@@ -23,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(AbstractContainerScreen.class)
-public abstract class AbstractContainerScreenMixin {
+public abstract class AbstractContainerScreenMixin implements BundleDragScreenAccess {
     @Unique
     private static final int BACKWITHTHEBUNDLE$NO_DRAG_BUTTON = -1;
 
@@ -45,6 +46,13 @@ public abstract class AbstractContainerScreenMixin {
 
     @Unique
     private int backwiththebundle$bundleDragButton = BACKWITHTHEBUNDLE$NO_DRAG_BUTTON;
+
+    @Unique
+    private int backwiththebundle$bundleDragCandidateButton = BACKWITHTHEBUNDLE$NO_DRAG_BUTTON;
+
+    @Unique
+    @Nullable
+    private Slot backwiththebundle$bundleDragCandidateSlot;
 
     @Unique
     @Nullable
@@ -91,15 +99,38 @@ public abstract class AbstractContainerScreenMixin {
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"))
-    private void backwiththebundle$clearStaleBundleDrag(
+    private void backwiththebundle$prepareBundleDrag(
         double mouseX,
         double mouseY,
         int mouseButton,
         CallbackInfoReturnable<Boolean> callback
     ) {
+        this.backwiththebundle$clearBundleDragCandidate();
         if (mouseButton == this.backwiththebundle$bundleDragButton) {
             this.backwiththebundle$clearBundleDragState();
             this.skipNextRelease = false;
+        }
+
+        AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>)(Object)this;
+        boolean bundleDragEnabled = ClientConfig.BUNDLE_DRAG_ENABLED.get();
+        boolean touchscreen = screen.getMinecraft().options.touchscreen().get();
+        if (!bundleDragEnabled || touchscreen || (mouseButton != 0 && mouseButton != 1)) {
+            return;
+        }
+
+        Slot slot = this.findSlot(mouseX, mouseY);
+        boolean eligibleSlot = mouseButton == 0
+            ? BundleMouseActions.canStartDragIntoBundle(screen, slot)
+            : BundleMouseActions.canDragOutOfBundle(screen, slot);
+        if (BundleInteractionPolicy.shouldBeginBundleDrag(
+            screen.getMenu().getCarried(),
+            mouseButton,
+            bundleDragEnabled,
+            touchscreen,
+            eligibleSlot
+        )) {
+            this.backwiththebundle$bundleDragCandidateButton = mouseButton;
+            this.backwiththebundle$bundleDragCandidateSlot = slot;
         }
     }
 
@@ -112,43 +143,76 @@ public abstract class AbstractContainerScreenMixin {
         double dragY,
         CallbackInfoReturnable<Boolean> callback
     ) {
-        if (mouseButton != 0 && mouseButton != 1) {
-            return;
+        if (this.backwiththebundle$handleBundleDrag(mouseX, mouseY, mouseButton, dragX, dragY)) {
+            callback.setReturnValue(true);
+        }
+    }
+
+    @Override
+    public boolean backwiththebundle$handleBundleDrag(
+        double mouseX,
+        double mouseY,
+        int mouseButton,
+        double dragX,
+        double dragY
+    ) {
+        boolean bundleDragEnabled = ClientConfig.BUNDLE_DRAG_ENABLED.get();
+        if (!bundleDragEnabled) {
+            this.backwiththebundle$clearBundleDragCandidate();
+            if (this.backwiththebundle$bundleDragButton != BACKWITHTHEBUNDLE$NO_DRAG_BUTTON) {
+                this.backwiththebundle$clearBundleDragState();
+                this.skipNextRelease = false;
+            }
+            return false;
         }
 
         AbstractContainerScreen<?> screen = (AbstractContainerScreen<?>)(Object)this;
         Slot slot = this.findSlot(mouseX, mouseY);
         if (this.backwiththebundle$bundleDragButton == BACKWITHTHEBUNDLE$NO_DRAG_BUTTON) {
-            boolean eligibleSlot = mouseButton == 0
-                ? BundleMouseActions.canDragIntoBundle(screen, slot)
-                : BundleMouseActions.canDragOutOfBundle(screen, slot);
-            if (!ClientConfig.BUNDLE_DRAG_ENABLED.get()
-                || screen.getMinecraft().options.touchscreen().get()
-                || !eligibleSlot) {
-                return;
+            if (mouseButton != this.backwiththebundle$bundleDragCandidateButton
+                || !BundleInteractionPolicy.shouldOwnBundleDrag(
+                screen.getMenu().getCarried(),
+                mouseButton,
+                bundleDragEnabled,
+                screen.getMinecraft().options.touchscreen().get()
+            )) {
+                return false;
             }
 
+            Slot startingSlot = this.backwiththebundle$bundleDragCandidateSlot;
             this.backwiththebundle$bundleDragButton = mouseButton;
+            this.backwiththebundle$clearBundleDragCandidate();
             this.backwiththebundle$suppressVanillaDragRelease();
+            this.backwiththebundle$handleBundleDragSlot(screen, startingSlot, mouseButton);
+            this.backwiththebundle$lastDragSlot = startingSlot;
         } else if (this.backwiththebundle$bundleDragButton != mouseButton) {
-            return;
+            return false;
         }
 
         this.skipNextRelease = true;
         if (slot != this.backwiththebundle$lastDragSlot) {
             this.backwiththebundle$lastDragSlot = slot;
-            if (mouseButton == 0 && BundleMouseActions.canDragIntoBundle(screen, slot)) {
-                this.slotClicked(slot, slot.index, mouseButton, ClickType.PICKUP);
-            } else if (mouseButton == 1 && BundleMouseActions.canDragOutOfBundle(screen, slot)) {
-                if (slot.getItem().isEmpty()) {
-                    this.slotClicked(slot, slot.index, mouseButton, ClickType.PICKUP);
-                } else {
-                    BundleMouseActions.handleMatchingTransfer(screen, slot);
-                }
-            }
+            this.backwiththebundle$handleBundleDragSlot(screen, slot, mouseButton);
         }
 
-        callback.setReturnValue(true);
+        return true;
+    }
+
+    @Unique
+    private void backwiththebundle$handleBundleDragSlot(
+        AbstractContainerScreen<?> screen,
+        @Nullable Slot slot,
+        int mouseButton
+    ) {
+        if (mouseButton == 0 && BundleMouseActions.canDragIntoBundle(screen, slot)) {
+            this.slotClicked(slot, slot.index, mouseButton, ClickType.PICKUP);
+        } else if (mouseButton == 1 && BundleMouseActions.canDragOutOfBundle(screen, slot)) {
+            if (slot.getItem().isEmpty()) {
+                this.slotClicked(slot, slot.index, mouseButton, ClickType.PICKUP);
+            } else {
+                BundleMouseActions.handleMatchingTransfer(screen, slot);
+            }
+        }
     }
 
     @Inject(method = "mouseReleased", at = @At("HEAD"))
@@ -173,6 +237,9 @@ public abstract class AbstractContainerScreenMixin {
         if (mouseButton == this.backwiththebundle$bundleDragButton) {
             this.backwiththebundle$clearBundleDragState();
         }
+        if (mouseButton == this.backwiththebundle$bundleDragCandidateButton) {
+            this.backwiththebundle$clearBundleDragCandidate();
+        }
     }
 
     @Unique
@@ -188,5 +255,11 @@ public abstract class AbstractContainerScreenMixin {
     private void backwiththebundle$clearBundleDragState() {
         this.backwiththebundle$bundleDragButton = BACKWITHTHEBUNDLE$NO_DRAG_BUTTON;
         this.backwiththebundle$lastDragSlot = null;
+    }
+
+    @Unique
+    private void backwiththebundle$clearBundleDragCandidate() {
+        this.backwiththebundle$bundleDragCandidateButton = BACKWITHTHEBUNDLE$NO_DRAG_BUTTON;
+        this.backwiththebundle$bundleDragCandidateSlot = null;
     }
 }

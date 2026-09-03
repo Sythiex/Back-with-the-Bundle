@@ -19,17 +19,45 @@ public final class BundleInteractionPolicy {
             || type == ClickType.SWAP;
     }
 
+    public static boolean shouldOwnBundleDrag(
+        ItemStack carriedStack,
+        int mouseButton,
+        boolean bundleDragEnabled,
+        boolean touchscreen
+    ) {
+        return bundleDragEnabled
+            && !touchscreen
+            && (mouseButton == 0 || mouseButton == 1)
+            && BundleContentsOperations.isBundle(carriedStack)
+            && carriedStack.getCount() == 1;
+    }
+
+    public static boolean shouldBeginBundleDrag(
+        ItemStack carriedStack,
+        int mouseButton,
+        boolean bundleDragEnabled,
+        boolean touchscreen,
+        boolean eligibleStartSlot
+    ) {
+        return eligibleStartSlot
+            && shouldOwnBundleDrag(carriedStack, mouseButton, bundleDragEnabled, touchscreen);
+    }
+
     public static boolean canDragIntoBundle(
         ItemStack carriedStack,
         ItemStack slottedStack,
         boolean canTakeFromSlot
     ) {
+        return canStartDragIntoBundle(carriedStack, canTakeFromSlot)
+            && !slottedStack.isEmpty()
+            && slottedStack.canFitInsideContainerItems();
+    }
+
+    public static boolean canStartDragIntoBundle(ItemStack carriedStack, boolean canTakeFromSlot) {
         return BundleContentsOperations.isBundle(carriedStack)
             && carriedStack.getCount() == 1
             && carriedStack.has(DataComponents.BUNDLE_CONTENTS)
-            && canTakeFromSlot
-            && !slottedStack.isEmpty()
-            && slottedStack.canFitInsideContainerItems();
+            && canTakeFromSlot;
     }
 
     public static boolean canDragOutOfBundle(ItemStack carriedStack, Slot slot) {
