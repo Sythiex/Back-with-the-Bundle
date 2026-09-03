@@ -1,6 +1,8 @@
 package com.sythiex.backwiththebundle.bundle;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public final class BundleInteractionPolicy {
@@ -15,5 +17,55 @@ public final class BundleInteractionPolicy {
     public static boolean shouldClearSelectionBeforeClick(ClickType type) {
         return type == ClickType.QUICK_MOVE
             || type == ClickType.SWAP;
+    }
+
+    public static boolean canDragIntoBundle(
+        ItemStack carriedStack,
+        ItemStack slottedStack,
+        boolean canTakeFromSlot
+    ) {
+        return BundleContentsOperations.isBundle(carriedStack)
+            && carriedStack.getCount() == 1
+            && carriedStack.has(DataComponents.BUNDLE_CONTENTS)
+            && canTakeFromSlot
+            && !slottedStack.isEmpty()
+            && slottedStack.canFitInsideContainerItems();
+    }
+
+    public static boolean canDragOutOfBundle(ItemStack carriedStack, Slot slot) {
+        if (!isSingleBundleWithContents(carriedStack) || !slot.isActive() || slot.isFake()) {
+            return false;
+        }
+
+        ItemStack slottedStack = slot.getItem();
+        ItemStack bundledStack = slottedStack.isEmpty()
+            ? BundleContentsOperations.getSelectedOrFirstItem(carriedStack)
+            : BundleContentsOperations.findMatchingItem(carriedStack, slottedStack);
+        return !bundledStack.isEmpty()
+            && slot.mayPlace(bundledStack)
+            && (!slottedStack.isEmpty() || maximumStackSize(slot, bundledStack) > 0);
+    }
+
+    public static boolean shouldMergeBundleIntoSlot(ItemStack carriedStack, Slot slot) {
+        return !slot.getItem().isEmpty() && canDragOutOfBundle(carriedStack, slot);
+    }
+
+    public static boolean canTransferMatchingToSlot(ItemStack carriedStack, Slot slot) {
+        if (!shouldMergeBundleIntoSlot(carriedStack, slot)) {
+            return false;
+        }
+
+        ItemStack bundledStack = BundleContentsOperations.findMatchingItem(carriedStack, slot.getItem());
+        return slot.getItem().getCount() < maximumStackSize(slot, bundledStack);
+    }
+
+    private static boolean isSingleBundleWithContents(ItemStack stack) {
+        return BundleContentsOperations.isBundle(stack)
+            && stack.getCount() == 1
+            && stack.has(DataComponents.BUNDLE_CONTENTS);
+    }
+
+    private static int maximumStackSize(Slot slot, ItemStack stack) {
+        return Math.min(slot.getMaxStackSize(stack), stack.getMaxStackSize());
     }
 }

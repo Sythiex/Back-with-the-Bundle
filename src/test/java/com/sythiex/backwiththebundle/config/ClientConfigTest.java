@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Test;
 
 class ClientConfigTest {
     @Test
-    void expandedBundleTooltipIsTheOnlyOptionAndDefaultsOn() {
+    void clientOptionsDefaultOn() {
         assertFalse(ClientConfig.SPEC.isEmpty());
         assertEquals(List.of("expandBundleTooltip"), ClientConfig.EXPAND_BUNDLE_TOOLTIP.getPath());
         assertTrue(ClientConfig.EXPAND_BUNDLE_TOOLTIP.getDefault());
-        assertEquals(1, ClientConfig.SPEC.getSpec().size());
+        assertEquals(List.of("bundleDragEnabled"), ClientConfig.BUNDLE_DRAG_ENABLED.getPath());
+        assertTrue(ClientConfig.BUNDLE_DRAG_ENABLED.getDefault());
+        assertEquals(2, ClientConfig.SPEC.getSpec().size());
     }
 }

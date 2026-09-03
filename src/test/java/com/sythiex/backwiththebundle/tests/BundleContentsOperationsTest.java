@@ -72,6 +72,74 @@ class BundleContentsOperationsTest {
     }
 
     @Test
+    void matchingTransferFindsEveryExactEntryAndPreservesUnrelatedOrder() {
+        ItemStack matchingIron = new ItemStack(Items.IRON_INGOT, 4);
+        matchingIron.set(DataComponents.CUSTOM_NAME, Component.literal("Matching iron"));
+        ItemStack otherMatchingIron = matchingIron.copyWithCount(3);
+        ItemStack bundle = bundleWithItems(
+            new ItemStack(Items.DIRT, 2),
+            matchingIron,
+            new ItemStack(Items.DIAMOND),
+            otherMatchingIron
+        );
+        BundleSelection.setSelectedItem(bundle, 0);
+        ItemStack slottedIron = matchingIron.copyWithCount(2);
+        Slot slot = new Slot(new SimpleContainer(slottedIron), 0, 0, 0);
+
+        assertEquals(7, BundleContentsOperations.tryTransferMatchingToSlot(bundle, slot));
+        assertEquals(9, slot.getItem().getCount());
+        assertEquals(Component.literal("Matching iron"), slot.getItem().get(DataComponents.CUSTOM_NAME));
+
+        BundleContents remaining = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        assertEquals(2, remaining.size());
+        assertTrue(remaining.getItemUnsafe(0).is(Items.DIRT));
+        assertTrue(remaining.getItemUnsafe(1).is(Items.DIAMOND));
+        assertEquals(BundleSelection.NO_SELECTED_ITEM, BundleSelection.getSelectedItem(bundle));
+    }
+
+    @Test
+    void matchingTransferRespectsCustomSlotCapacityAndLeavesTheRemainder() {
+        ItemStack bundle = bundleWithItems(new ItemStack(Items.IRON_INGOT, 10));
+        BundleSelection.setSelectedItem(bundle, 0);
+        Slot slot = new LimitedSlot(new SimpleContainer(new ItemStack(Items.IRON_INGOT, 14)), 16, true);
+
+        assertEquals(2, BundleContentsOperations.tryTransferMatchingToSlot(bundle, slot));
+        assertEquals(16, slot.getItem().getCount());
+        assertEquals(8, bundle.get(DataComponents.BUNDLE_CONTENTS).getItemUnsafe(0).getCount());
+        assertEquals(BundleSelection.NO_SELECTED_ITEM, BundleSelection.getSelectedItem(bundle));
+    }
+
+    @Test
+    void matchingTransferStillRespectsTheItemsOwnStackLimit() {
+        ItemStack bundle = bundleWithItems(new ItemStack(Items.ENDER_PEARL, 5));
+        Slot slot = new LimitedSlot(new SimpleContainer(new ItemStack(Items.ENDER_PEARL, 15)), 64, true);
+
+        assertEquals(1, BundleContentsOperations.tryTransferMatchingToSlot(bundle, slot));
+        assertEquals(16, slot.getItem().getCount());
+        assertEquals(4, bundle.get(DataComponents.BUNDLE_CONTENTS).getItemUnsafe(0).getCount());
+    }
+
+    @Test
+    void matchingTransferFailuresDoNotMutateContentsSlotsOrSelection() {
+        ItemStack bundle = bundleWithItems(new ItemStack(Items.IRON_INGOT, 10));
+        BundleSelection.setSelectedItem(bundle, 0);
+        ItemStack namedIron = new ItemStack(Items.IRON_INGOT, 2);
+        namedIron.set(DataComponents.CUSTOM_NAME, Component.literal("Different iron"));
+        Slot mismatchedSlot = new Slot(new SimpleContainer(namedIron), 0, 0, 0);
+
+        assertEquals(0, BundleContentsOperations.tryTransferMatchingToSlot(bundle, mismatchedSlot));
+        assertEquals(2, mismatchedSlot.getItem().getCount());
+        assertEquals(10, bundle.get(DataComponents.BUNDLE_CONTENTS).getItemUnsafe(0).getCount());
+        assertEquals(0, BundleSelection.getSelectedItem(bundle));
+
+        Slot rejectingSlot = new LimitedSlot(new SimpleContainer(new ItemStack(Items.IRON_INGOT, 2)), 64, false);
+        assertEquals(0, BundleContentsOperations.tryTransferMatchingToSlot(bundle, rejectingSlot));
+        assertEquals(2, rejectingSlot.getItem().getCount());
+        assertEquals(10, bundle.get(DataComponents.BUNDLE_CONTENTS).getItemUnsafe(0).getCount());
+        assertEquals(0, BundleSelection.getSelectedItem(bundle));
+    }
+
+    @Test
     void selectedRemovalPreservesStackComponentsAndRemainingOrder() {
         ItemStack namedDirt = new ItemStack(Items.DIRT, 2);
         namedDirt.set(DataComponents.CUSTOM_NAME, Component.literal("Selected dirt"));
@@ -142,5 +210,26 @@ class BundleContentsOperationsTest {
         ItemStack bundle = new ItemStack(Items.BUNDLE);
         bundle.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(List.of(items)));
         return bundle;
+    }
+
+    private static final class LimitedSlot extends Slot {
+        private final int maximum;
+        private final boolean acceptsItems;
+
+        private LimitedSlot(SimpleContainer container, int maximum, boolean acceptsItems) {
+            super(container, 0, 0, 0);
+            this.maximum = maximum;
+            this.acceptsItems = acceptsItems;
+        }
+
+        @Override
+        public int getMaxStackSize(ItemStack stack) {
+            return this.maximum;
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return this.acceptsItems;
+        }
     }
 }

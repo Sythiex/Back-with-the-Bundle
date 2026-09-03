@@ -199,6 +199,8 @@ class ResourceFoundationTest {
         assertNotNull(language.get("backwiththebundle.configuration.title"));
         assertNotNull(language.get("backwiththebundle.configuration.expandBundleTooltip"));
         assertNotNull(language.get("backwiththebundle.configuration.expandBundleTooltip.tooltip"));
+        assertNotNull(language.get("backwiththebundle.configuration.bundleDragEnabled"));
+        assertNotNull(language.get("backwiththebundle.configuration.bundleDragEnabled.tooltip"));
     }
 
     private static JsonElement json(String path) throws IOException {

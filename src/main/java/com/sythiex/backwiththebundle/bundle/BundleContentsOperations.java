@@ -47,6 +47,69 @@ public final class BundleContentsOperations {
         return inserted;
     }
 
+    public static int tryTransferMatchingToSlot(ItemStack bundle, Slot slot) {
+        BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        ItemStack slottedStack = slot.getItem();
+        if (contents == null || contents.isEmpty() || slottedStack.isEmpty()) {
+            return 0;
+        }
+
+        List<ItemStack> remainingItems = contents.itemCopyStream()
+            .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
+        int transferred = 0;
+        for (int index = 0; index < remainingItems.size(); index++) {
+            ItemStack bundledStack = remainingItems.get(index);
+            int maximum = Math.min(slot.getMaxStackSize(bundledStack), bundledStack.getMaxStackSize());
+            if (!ItemStack.isSameItemSameComponents(bundledStack, slottedStack)
+                || !slot.mayPlace(bundledStack)
+                || slot.getItem().getCount() >= maximum) {
+                continue;
+            }
+
+            int previousCount = bundledStack.getCount();
+            int availableSpace = maximum - slot.getItem().getCount();
+            ItemStack remainder = slot.safeInsert(bundledStack, availableSpace);
+            int moved = previousCount - remainder.getCount();
+            if (moved > 0) {
+                transferred += moved;
+                if (remainder.isEmpty()) {
+                    remainingItems.remove(index--);
+                } else {
+                    remainingItems.set(index, remainder);
+                }
+            }
+        }
+
+        if (transferred > 0) {
+            replaceContents(bundle, new BundleContents(List.copyOf(remainingItems)));
+        }
+        return transferred;
+    }
+
+    public static ItemStack findMatchingItem(ItemStack bundle, ItemStack target) {
+        BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        if (contents == null || target.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        for (ItemStack bundledStack : contents.items()) {
+            if (ItemStack.isSameItemSameComponents(bundledStack, target)) {
+                return bundledStack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    public static ItemStack getSelectedOrFirstItem(ItemStack bundle) {
+        BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
+        if (contents == null || contents.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+
+        int selectedItem = BundleSelection.getSelectedItem(bundle);
+        return contents.getItemUnsafe(selectedItem == BundleSelection.NO_SELECTED_ITEM ? 0 : selectedItem);
+    }
+
     public static ItemStack removeSelected(ItemStack bundle) {
         BundleContents contents = bundle.get(DataComponents.BUNDLE_CONTENTS);
         if (contents == null || contents.isEmpty()) {

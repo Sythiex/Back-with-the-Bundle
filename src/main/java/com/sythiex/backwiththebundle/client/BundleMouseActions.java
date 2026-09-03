@@ -1,16 +1,22 @@
 package com.sythiex.backwiththebundle.client;
 
+import javax.annotation.Nullable;
+
 import com.sythiex.backwiththebundle.BackwiththeBundle;
 import com.sythiex.backwiththebundle.bundle.BundleContentsOperations;
+import com.sythiex.backwiththebundle.bundle.BundleInteractionHooks;
+import com.sythiex.backwiththebundle.bundle.BundleInteractionPolicy;
 import com.sythiex.backwiththebundle.bundle.BundleSelection;
 import com.sythiex.backwiththebundle.bundle.BundleSelectionScroll;
 import com.sythiex.backwiththebundle.network.SelectBundleItemPayload;
+import com.sythiex.backwiththebundle.network.TransferBundleToSlotPayload;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
@@ -84,6 +90,87 @@ public final class BundleMouseActions {
             BundleSelection.clear(slot.getItem());
             sendSelection(resolveServerSlot(screen, slot), BundleSelection.NO_SELECTED_ITEM);
         }
+    }
+
+    public static boolean canDragIntoBundle(AbstractContainerScreen<?> screen, @Nullable Slot slot) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || slot == null || !BundleInteractionPolicy.canDragIntoBundle(
+            screen.getMenu().getCarried(),
+            slot.getItem(),
+            slot.mayPickup(player)
+        )) {
+            return false;
+        }
+
+        return !(screen instanceof CreativeModeInventoryScreen)
+            || CreativeInventorySlotResolver.findInventoryMenuSlot(player.inventoryMenu, slot)
+                != CreativeInventorySlotResolver.NO_SERVER_SLOT;
+    }
+
+    public static boolean canDragOutOfBundle(AbstractContainerScreen<?> screen, @Nullable Slot slot) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null
+            || slot == null
+            || !BundleInteractionPolicy.canDragOutOfBundle(screen.getMenu().getCarried(), slot)) {
+            return false;
+        }
+
+        return !(screen instanceof CreativeModeInventoryScreen)
+            || CreativeInventorySlotResolver.findInventoryMenuSlot(player.inventoryMenu, slot)
+                != CreativeInventorySlotResolver.NO_SERVER_SLOT;
+    }
+
+    public static boolean handleMatchingTransfer(AbstractContainerScreen<?> screen, @Nullable Slot slot) {
+        if (slot == null) {
+            return false;
+        }
+
+        ItemStack bundle = screen.getMenu().getCarried();
+        if (!BundleInteractionPolicy.shouldMergeBundleIntoSlot(bundle, slot)) {
+            return false;
+        }
+
+        Minecraft minecraft = screen.getMinecraft();
+        LocalPlayer player = minecraft.player;
+        if (player == null) {
+            return false;
+        }
+
+        ServerSlotTarget target = resolveServerSlot(screen, slot);
+        if (!target.isValid()) {
+            return false;
+        }
+
+        boolean creativeInventory = screen instanceof CreativeModeInventoryScreen;
+        if (!creativeInventory && minecraft.getConnection() == null) {
+            return false;
+        }
+
+        boolean eventHandled = BundleInteractionHooks.onStackedOnOther(screen.getMenu(), slot, player);
+        ItemStack currentBundle = screen.getMenu().getCarried();
+        int transferred = !eventHandled
+            && slot.allowModification(player)
+            && BundleInteractionPolicy.canTransferMatchingToSlot(currentBundle, slot)
+            ? BundleContentsOperations.tryTransferMatchingToSlot(currentBundle, slot)
+            : 0;
+
+        if (!creativeInventory) {
+            PacketDistributor.sendToServer(
+                new TransferBundleToSlotPayload(target.containerId(), target.slotIndex())
+            );
+        }
+
+        if (creativeInventory) {
+            player.inventoryMenu.broadcastChanges();
+            if (transferred > 0) {
+                player.playSound(
+                    SoundEvents.BUNDLE_REMOVE_ONE,
+                    0.8F,
+                    0.8F + player.level().getRandom().nextFloat() * 0.4F
+                );
+            }
+        }
+        return true;
     }
 
     private static boolean selectFromScroll(AbstractContainerScreen<?> screen, double scrollX, double scrollY) {

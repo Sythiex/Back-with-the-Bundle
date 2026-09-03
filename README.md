@@ -9,9 +9,10 @@ A faithful backport of all the modern bundle features to 1.21.1. Includes:
 
 ## Additional Features
 
-- **Expanded Bundle Tooltips:** Displays every item stored in the bundle
+These features are client-side and can be disabled individually at any time in the config menu.
 
-These features are completely clientside and can be disabled in the config menu.
+- **Expanded Bundle Tooltips:** Displays every item stored in the bundle
+- **Bundle Drag Controls:** Drag a bundle across inventory slots to insert or remove items
 
 ## Notes
 
