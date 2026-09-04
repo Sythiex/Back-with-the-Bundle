@@ -4,6 +4,7 @@ A faithful backport of all the modern bundle features to 1.21.1. Includes:
 
 - Updated UI and controls
 - Dyed bundles
+- Bundles open and display the selected item
 - Crafting recipes
 - Bundles as loot in village chests
 
@@ -28,3 +29,7 @@ Drag a bundle across inventory slots to insert or remove items.
 - This mod does not require the experimental bundles feature flag.
 - This mod is required on both the client and server.
 - Requires NeoForge. Support for other mod loaders is not planned.
+
+## Compatibility
+
+**[Easy Shulker Boxes](https://www.curseforge.com/minecraft/mc-mods/easy-shulker-boxes):** Back with the Bundle handles bundle interactions and tooltips by default. To use Easy Shulker Boxes for those features instead, install the [Back with the Bundle + Easy Shulker Boxes Compat](datapacks/Back_with_the_Bundle_Easy_Shulker_Boxes_Compat-v1) data pack. Note that while the data pack is enabled, bundles will not open and display the selected item.
