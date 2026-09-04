@@ -55,6 +55,9 @@ public abstract class AbstractContainerScreenMixin implements BundleDragScreenAc
     private Slot backwiththebundle$bundleDragCandidateSlot;
 
     @Unique
+    private boolean backwiththebundle$bundleDragCandidateStartedOnEmptySlot;
+
+    @Unique
     @Nullable
     private Slot backwiththebundle$lastDragSlot;
 
@@ -131,6 +134,7 @@ public abstract class AbstractContainerScreenMixin implements BundleDragScreenAc
         )) {
             this.backwiththebundle$bundleDragCandidateButton = mouseButton;
             this.backwiththebundle$bundleDragCandidateSlot = slot;
+            this.backwiththebundle$bundleDragCandidateStartedOnEmptySlot = slot != null && slot.getItem().isEmpty();
         }
     }
 
@@ -180,6 +184,16 @@ public abstract class AbstractContainerScreenMixin implements BundleDragScreenAc
             }
 
             Slot startingSlot = this.backwiththebundle$bundleDragCandidateSlot;
+            boolean enteredDifferentSlot = slot != null && slot != startingSlot;
+            if (BundleInteractionPolicy.shouldKeepBundleDragPending(
+                mouseButton,
+                this.backwiththebundle$bundleDragCandidateStartedOnEmptySlot,
+                enteredDifferentSlot
+            )) {
+                // consume motion without suppressing release so vanilla still performs a normal pickup click
+                return true;
+            }
+
             this.backwiththebundle$bundleDragButton = mouseButton;
             this.backwiththebundle$clearBundleDragCandidate();
             this.backwiththebundle$suppressVanillaDragRelease();
@@ -261,5 +275,6 @@ public abstract class AbstractContainerScreenMixin implements BundleDragScreenAc
     private void backwiththebundle$clearBundleDragCandidate() {
         this.backwiththebundle$bundleDragCandidateButton = BACKWITHTHEBUNDLE$NO_DRAG_BUTTON;
         this.backwiththebundle$bundleDragCandidateSlot = null;
+        this.backwiththebundle$bundleDragCandidateStartedOnEmptySlot = false;
     }
 }

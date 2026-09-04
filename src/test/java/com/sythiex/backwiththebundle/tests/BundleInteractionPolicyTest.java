@@ -78,6 +78,18 @@ class BundleInteractionPolicyTest {
     }
 
     @Test
+    void leftDragFromAnEmptySlotStaysPendingUntilItEntersAnotherSlot() {
+        assertTrue(BundleInteractionPolicy.shouldKeepBundleDragPending(0, true, false));
+        assertFalse(BundleInteractionPolicy.shouldKeepBundleDragPending(0, true, true));
+    }
+
+    @Test
+    void occupiedStartsAndRightDragsKeepTheirExistingImmediateActivation() {
+        assertFalse(BundleInteractionPolicy.shouldKeepBundleDragPending(0, false, false));
+        assertFalse(BundleInteractionPolicy.shouldKeepBundleDragPending(1, true, false));
+    }
+
+    @Test
     void dragInsertionRequiresOneBundleAndAnEligibleSlottedItem() {
         ItemStack bundle = new ItemStack(Items.BUNDLE);
         ItemStack apple = new ItemStack(Items.APPLE);

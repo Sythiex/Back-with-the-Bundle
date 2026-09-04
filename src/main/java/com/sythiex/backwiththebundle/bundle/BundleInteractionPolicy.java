@@ -43,6 +43,16 @@ public final class BundleInteractionPolicy {
             && shouldOwnBundleDrag(carriedStack, mouseButton, bundleDragEnabled, touchscreen);
     }
 
+    public static boolean shouldKeepBundleDragPending(
+        int mouseButton,
+        boolean startedOnEmptySlot,
+        boolean enteredDifferentSlot
+    ) {
+        return mouseButton == 0
+            && startedOnEmptySlot
+            && !enteredDifferentSlot;
+    }
+
     public static boolean canDragIntoBundle(
         ItemStack carriedStack,
         ItemStack slottedStack,
