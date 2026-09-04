@@ -76,3 +76,9 @@ config="${mod_id}.mixins.json"
     versionRange="${minecraft_version_range}"
     ordering="NONE"
     side="BOTH"
+
+[[dependencies.${mod_id}]]
+    modId="easyshulkerboxes"
+    type="optional"
+    ordering="AFTER"
+    side="BOTH"

@@ -203,6 +203,15 @@ class ResourceFoundationTest {
         assertNotNull(language.get("backwiththebundle.configuration.bundleDragEnabled.tooltip"));
     }
 
+    @Test
+    void easyShulkerBoxesBundleProviderIsDisabledWithAnEmptyItemSelection() throws IOException {
+        JsonObject provider = json("data/easyshulkerboxes/item_contents_provider/bundle.json").getAsJsonObject();
+
+        assertEquals("iteminteractions:bundle", provider.get("type").getAsString());
+        assertEquals(1, provider.get("capacity_multiplier").getAsInt());
+        assertTrue(provider.getAsJsonArray("supported_items").isEmpty());
+    }
+
     private static JsonElement json(String path) throws IOException {
         try (InputStream stream = resource(path);
              InputStreamReader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
