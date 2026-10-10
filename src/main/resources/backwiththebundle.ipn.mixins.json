@@ -1,0 +1,11 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.sythiex.backwiththebundle.compat.ipn.mixin",
+  "plugin": "com.sythiex.backwiththebundle.compat.ipn.InventoryProfilesNextMixinPlugin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ItemTypeAccessor",
+    "ItemTypeExtensionsMixin"
+  ]
+}
