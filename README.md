@@ -35,3 +35,5 @@ Drag a bundle across inventory slots to insert or remove items.
 **[Easy Shulker Boxes](https://www.curseforge.com/minecraft/mc-mods/easy-shulker-boxes):** Back with the Bundle handles bundle interactions and tooltips by default. To use Easy Shulker Boxes for those features instead, install the [Back with the Bundle + Easy Shulker Boxes Compat](datapacks/Back_with_the_Bundle_Easy_Shulker_Boxes_Compat-v1) data pack. Note that while the data pack is enabled, bundles will not open and display the selected item.
 
 **Inventory Sorting Mods:** Some sorting mods on 1.21.1 do not have support for the newer bundle interactions. If you are experiencing issues while sorting inventories that contain a bundle, please open an issue and include the sorting mod’s name and version. Back with the Bundle already supports [Inventory Profiles Next](https://www.curseforge.com/minecraft/mc-mods/inventory-profiles-next).
+
+**[Vanilla Backport](https://www.curseforge.com/minecraft/mc-mods/vanillabackport):** Not compatible
